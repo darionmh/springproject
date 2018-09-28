@@ -4,6 +4,7 @@ import com.scarlatti.demo.annotations.Bean;
 import com.scarlatti.demo.annotations.Component;
 import com.scarlatti.demo.annotations.Config;
 import com.scarlatti.demo.models.BeanDefinition;
+import com.scarlatti.demo.models.BeanDefinitionStore;
 import com.scarlatti.demo.models.BeanInstanceStore;
 import com.scarlatti.demo.runners.CommandLineRunner;
 import com.scarlatti.demo.utils.AnnotationUtils;
@@ -24,10 +25,11 @@ import java.util.*;
 public class Demo implements Runnable {
 
     private BeanInstanceStore beanInstanceStore;
-    private Map<String, BeanDefinition> beanDefinitionStore = new HashMap<>();
+    private BeanDefinitionStore beanDefinitionStore;
 
     public Demo() {
         beanInstanceStore = new BeanInstanceStore();
+        beanDefinitionStore = new BeanDefinitionStore();
     }
 
     public static void main(String[] args) {
@@ -39,8 +41,13 @@ public class Demo implements Runnable {
         // this particular demo is a baby version of Spring's @Bean with CommandLineRunner
         scanForComponents();
         getBeanFactoryMethods();
-        processBeanDefs(0);
-        processBeanDefs(1);
+
+        while(!beanDefinitionStore.getValues().isEmpty()){
+            String key = beanDefinitionStore.first();
+            BeanDefinition beanDefinition = beanDefinitionStore.getValues().get(key);
+            initalizeBean(key, beanDefinition);
+        }
+
         runCommandLineRunners();
         System.out.println("Done! :)");
     }
@@ -79,43 +86,36 @@ public class Demo implements Runnable {
                 .forEach(config -> AnnotationUtils.getMethods(config, Bean.class)
                         .stream()
                         .map(bean -> Collections.singletonMap(bean.getName(), BeanUtils.createBeanDefinition(bean, config)))
-                        .forEach(beanMap -> beanDefinitionStore.putAll(beanMap))
+                        .forEach(beanMap -> beanDefinitionStore.addBeans(beanMap))
                 );
     }
 
-    private void processBeanDefs(int dependencies){
-        List<String> defsToBeRemoved = new ArrayList<>();
+    private Object initalizeBean(String name, BeanDefinition beanDefinition){
+        List<Object> dependencies = new ArrayList<>();
+        beanDefinition.getDependencies().forEach(beanDependency -> {
+            Object o = beanInstanceStore.findBeanOfType(beanDependency.getType());
 
-        beanDefinitionStore.forEach((key, val) -> {
-            if(val.getDependencies().isEmpty()){
-                try {
-                    beanInstanceStore.addBean(key, val.getFactoryMethod().invoke(val.getParentObject()));
-                    defsToBeRemoved.add(key);
-                } catch (Exception e) {
-                    throw new RuntimeException("Error creating bean of type "+val.getFactoryMethod().getReturnType(), e);
+            if(o == null){
+                String dependencyDefName = beanDefinitionStore.findBeanDefinition(beanDependency.getType());
+                BeanDefinition dependencyDef = beanDefinitionStore.getValues().get(dependencyDefName);
+                if(dependencyDef == null){
+                    throw new RuntimeException("Error creating bean of type: "+beanDefinition.getFactoryMethod().getReturnType() + "\n" +
+                            "Could not find bean of type: "+beanDependency.getType());
                 }
-            }else{
-                if(dependencies > 0){
-                    List<Object> params = new ArrayList<>();
-                    val.getDependencies().forEach(beanDependency -> {
-                        Object o = beanInstanceStore.findBeanOfType(beanDependency.getType());
-
-                        if(o == null){
-                            throw new RuntimeException("Could not find bean of type "+beanDependency.getType());
-                        }
-
-                        params.add(o);
-                    });
-                    try{
-                        beanInstanceStore.addBean(key, val.getFactoryMethod().invoke(val.getParentObject(), params.toArray()));
-                        defsToBeRemoved.add(key);
-                    } catch (Exception e){
-                        throw new RuntimeException("Error creating bean of type "+val.getFactoryMethod().getReturnType(), e);
-                    }
-                }
+                o = initalizeBean(dependencyDefName, dependencyDef);
+                beanDefinitionStore.getValues().remove(dependencyDefName);
             }
+
+            dependencies.add(o);
         });
 
-        defsToBeRemoved.forEach(def -> beanDefinitionStore.remove(def));
+        try{
+            Object o = beanDefinition.getFactoryMethod().invoke(beanDefinition.getParentObject(), dependencies.toArray());
+            beanInstanceStore.addBean(name, o);
+            beanDefinitionStore.getValues().remove(name);
+            return o;
+        } catch (Exception e){
+            throw new RuntimeException("Error creating bean of type "+beanDefinition.getFactoryMethod().getReturnType(), e);
+        }
     }
 }

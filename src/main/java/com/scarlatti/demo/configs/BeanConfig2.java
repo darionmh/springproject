@@ -16,13 +16,18 @@ import com.scarlatti.demo.annotations.Config;
 public class BeanConfig2 {
 
     @Bean
-    public CommandLineRunner printMessage(String val){
+    public CommandLineRunner printMessage(String val, String val2, int num){
         return new CommandLineRunner() {
             @Override
             public void run() {
-                System.out.println(val);
+                System.out.println(val + " " + num + " " + val2);
             }
         };
+    }
+
+    @Bean
+    public int count(String val){
+        return val.length();
     }
 
     @Bean
