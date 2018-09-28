@@ -12,8 +12,10 @@ import com.scarlatti.demo.annotations.Config;
  * @author Grant Bradshaw
  * @since 9/11/2018
  */
-@Config
+@Config("BeanConfig2")
 public class BeanConfig2 {
+
+    public BeanConfig2(){}
 
     @Bean
     public CommandLineRunner printMessage(String val, String val2, int num){

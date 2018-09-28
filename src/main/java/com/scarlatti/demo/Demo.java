@@ -10,9 +10,10 @@ import com.scarlatti.demo.runners.CommandLineRunner;
 import com.scarlatti.demo.utils.AnnotationUtils;
 import com.scarlatti.demo.utils.BeanUtils;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * ``_  _ _``_`_|_ _``_ |_  _``_
@@ -26,10 +27,12 @@ public class Demo implements Runnable {
 
     private BeanInstanceStore beanInstanceStore;
     private BeanDefinitionStore beanDefinitionStore;
+    private HashMap<String, Class> componentStore;
 
     public Demo() {
         beanInstanceStore = new BeanInstanceStore();
         beanDefinitionStore = new BeanDefinitionStore();
+        componentStore = new HashMap<>();
     }
 
     public static void main(String[] args) {
@@ -42,7 +45,7 @@ public class Demo implements Runnable {
         scanForComponents();
         getBeanFactoryMethods();
 
-        while(!beanDefinitionStore.getValues().isEmpty()){
+        while (!beanDefinitionStore.getValues().isEmpty()) {
             String key = beanDefinitionStore.first();
             BeanDefinition beanDefinition = beanDefinitionStore.getValues().get(key);
             initalizeBean(key, beanDefinition);
@@ -52,7 +55,7 @@ public class Demo implements Runnable {
         System.out.println("Done! :)");
     }
 
-    private void runCommandLineRunners(){
+    private void runCommandLineRunners() {
         beanInstanceStore.getValues().filter(o -> o instanceof CommandLineRunner).forEach(o -> {
             ((CommandLineRunner) o).run();
         });
@@ -61,20 +64,42 @@ public class Demo implements Runnable {
     private void scanForComponents() {
         AnnotationUtils.getClasses(this.getClass().getPackage().getName(), Component.class)
                 .forEach(componentClass -> {
-                    if (componentClass.getConstructors().length > 1) {
-                        throw new RuntimeException("Construct for " + componentClass.getName() + " shouldn't have more than one constructor. We can't deal with those yet.");
-                    } else if (componentClass.getConstructors().length == 1) {
-                        Constructor constructor = componentClass.getConstructors()[0];
-
-                        if(constructor.getParameterCount() == 0) {
-                            try {
-                                beanInstanceStore.addBean(componentClass.getSimpleName(), componentClass.newInstance());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }else{
-                            throw new RuntimeException("No args in constructors please. ");
+                    try {
+                        String name = "";
+                        if(componentClass.getAnnotation(Component.class) != null){
+                            name = componentClass.getAnnotation(Component.class).value();
+                        }else if(componentClass.getAnnotation(Config.class) != null){
+                            name = componentClass.getAnnotation(Config.class).value();
                         }
+
+                        name = name.isEmpty() ? componentClass.getSimpleName() : name;
+                        componentStore.put(name, componentClass);
+
+                        if(componentClass.isAnnotationPresent(Config.class)){
+
+//                            AnnotationUtils.getMethods(componentClass, Bean.class)
+//                                    .stream()
+//                                    .map(bean -> Collections.singletonMap(bean.getName(), BeanUtils.createBeanDefinition(bean, config)))
+//                                    .forEach(beanMap -> beanDefinitionStore.addBeans(beanMap))
+                        }
+
+//                    if (componentClass.getConstructors().length > 1) {
+//                        throw new RuntimeException("Construct for " + componentClass.getName() + " shouldn't have more than one constructor. We can't deal with those yet.");
+//                    } else if (componentClass.getConstructors().length == 1) {
+//                        Constructor constructor = componentClass.getConstructors()[0];
+//
+//                        if(constructor.getParameterCount() == 0) {
+//                            try {
+//                                beanInstanceStore.addBean(componentClass.getSimpleName(), componentClass.newInstance());
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//                        }else{
+//                            throw new RuntimeException("No args in constructors please. ");
+//                        }
+//                    }
+                    }catch(Exception e){
+                        throw new RuntimeException(e);
                     }
                 });
     }
@@ -90,17 +115,17 @@ public class Demo implements Runnable {
                 );
     }
 
-    private Object initalizeBean(String name, BeanDefinition beanDefinition){
+    private Object initalizeBean(String name, BeanDefinition beanDefinition) {
         List<Object> dependencies = new ArrayList<>();
         beanDefinition.getDependencies().forEach(beanDependency -> {
             Object o = beanInstanceStore.findBeanOfType(beanDependency.getType());
 
-            if(o == null){
+            if (o == null) {
                 String dependencyDefName = beanDefinitionStore.findBeanDefinition(beanDependency.getType());
                 BeanDefinition dependencyDef = beanDefinitionStore.getValues().get(dependencyDefName);
-                if(dependencyDef == null){
-                    throw new RuntimeException("Error creating bean of type: "+beanDefinition.getFactoryMethod().getReturnType() + "\n" +
-                            "Could not find bean of type: "+beanDependency.getType());
+                if (dependencyDef == null) {
+                    throw new RuntimeException("Error creating bean of type: " + beanDefinition.getFactoryMethod().getReturnType() + "\n" +
+                            "Could not find bean of type: " + beanDependency.getType());
                 }
                 o = initalizeBean(dependencyDefName, dependencyDef);
                 beanDefinitionStore.getValues().remove(dependencyDefName);
@@ -109,13 +134,13 @@ public class Demo implements Runnable {
             dependencies.add(o);
         });
 
-        try{
+        try {
             Object o = beanDefinition.getFactoryMethod().invoke(beanDefinition.getParentObject(), dependencies.toArray());
             beanInstanceStore.addBean(name, o);
             beanDefinitionStore.getValues().remove(name);
             return o;
-        } catch (Exception e){
-            throw new RuntimeException("Error creating bean of type "+beanDefinition.getFactoryMethod().getReturnType(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error creating bean of type " + beanDefinition.getFactoryMethod().getReturnType(), e);
         }
     }
 }

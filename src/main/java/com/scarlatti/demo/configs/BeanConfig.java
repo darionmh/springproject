@@ -12,10 +12,10 @@ import com.scarlatti.demo.annotations.Config;
  * @author Grant Bradshaw
  * @since 9/11/2018
  */
-@Config
+@Config("Config")
 public class BeanConfig {
 
-    @Bean
+    @Bean("Runner1")
     public CommandLineRunner getRunnable1(){
         return new CommandLineRunner() {
             @Override
