@@ -1,4 +1,4 @@
-package com.scarlatti.demo.models;
+package com.springproject.models;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
@@ -22,6 +22,7 @@ public class BeanDependency {
         primitives.put(double.class, Double.class);
     }
 
+    private String name;
     private Class type;
     private List<Annotation> annotationList;
 
@@ -33,11 +34,7 @@ public class BeanDependency {
     }
 
     public void setType(Class type) {
-        if(primitives.containsKey(type)){
-            this.type = primitives.get(type);
-        }else{
-            this.type = type;
-        }
+        this.type = primitives.getOrDefault(type, type);
     }
 
     public List<Annotation> getAnnotationList() {

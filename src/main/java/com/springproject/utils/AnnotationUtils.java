@@ -1,7 +1,5 @@
-package com.scarlatti.demo.utils;
+package com.springproject.utils;
 
-import com.scarlatti.demo.configs.BeanConfig;
-import com.scarlatti.demo.annotations.Bean;
 import org.reflections.Reflections;
 
 import java.lang.annotation.Annotation;

@@ -1,8 +1,10 @@
-package com.scarlatti.demo.utils;
+package com.springproject.utils;
 
-import com.scarlatti.demo.models.BeanDefinition;
-import com.scarlatti.demo.models.BeanDependency;
+import com.springproject.models.BeanDefinition;
+import com.springproject.models.BeanDependency;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +26,14 @@ public class BeanUtils {
         return def;
     }
 
-    private static List<BeanDependency> extractDependencies(Method factoryMethod) {
+    public static BeanDefinition createBeanDefinition(Constructor factoryMethod) {
+        BeanDefinition def = new BeanDefinition();
+        def.setFactoryMethod(factoryMethod);
+        def.setDependencies(extractDependencies(factoryMethod));
+        return def;
+    }
+
+    private static List<BeanDependency> extractDependencies(Executable factoryMethod) {
         return Arrays.stream(factoryMethod.getParameters())
                 .map(param -> {
                     BeanDependency dependency = new BeanDependency();

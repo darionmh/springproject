@@ -1,5 +1,6 @@
-package com.scarlatti.demo.models;
+package com.springproject.models;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -8,18 +9,18 @@ import java.util.List;
  * TSO2438
  */
 public class BeanDefinition {
-    private Method factoryMethod;
+    private Executable factoryMethod;
     private Object parentObject;
     private List<BeanDependency> dependencies;
 
     public BeanDefinition() {
     }
 
-    public Method getFactoryMethod() {
+    public Executable getFactoryMethod() {
         return factoryMethod;
     }
 
-    public void setFactoryMethod(Method factoryMethod) {
+    public void setFactoryMethod(Executable factoryMethod) {
         this.factoryMethod = factoryMethod;
     }
 

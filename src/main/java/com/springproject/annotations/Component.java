@@ -1,4 +1,4 @@
-package com.scarlatti.demo.annotations;
+package com.springproject.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * TSO2438
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Bean{
+@Target(ElementType.TYPE)
+public @interface Component{
     String value() default "";
 }

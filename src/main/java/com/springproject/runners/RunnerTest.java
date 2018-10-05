@@ -1,6 +1,6 @@
-package com.scarlatti.demo.runners;
+package com.springproject.runners;
 
-import com.scarlatti.demo.annotations.Component;
+import com.springproject.annotations.Component;
 
 /**
  * Created by Darion Higgins on 9/21/2018

@@ -1,4 +1,4 @@
-package com.scarlatti.demo.runners;
+package com.springproject.runners;
 
 /**
  * Created by Darion Higgins on 9/21/2018

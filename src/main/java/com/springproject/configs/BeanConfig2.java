@@ -1,8 +1,8 @@
-package com.scarlatti.demo.configs;
+package com.springproject.configs;
 
-import com.scarlatti.demo.runners.CommandLineRunner;
-import com.scarlatti.demo.annotations.Bean;
-import com.scarlatti.demo.annotations.Config;
+import com.springproject.runners.CommandLineRunner;
+import com.springproject.annotations.Bean;
+import com.springproject.annotations.Config;
 
 /**
  * ``_  _ _``_`_|_ _``_ |_  _``_

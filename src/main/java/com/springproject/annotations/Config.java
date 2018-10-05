@@ -1,4 +1,4 @@
-package com.scarlatti.demo.annotations;
+package com.springproject.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
